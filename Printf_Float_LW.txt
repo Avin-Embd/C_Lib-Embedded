@@ -1,0 +1,62 @@
+/**
+ * @brief Transmits a formatted string over UART.
+ *
+ * This function formats a string using printf-style syntax and sends it
+ * via UART. It uses HAL_UART_Transmit and blocks until transmission completes.
+ *
+ * @note Ensure UART is initialized before calling. Buffer size is limited.
+ * @note Not thread-safe. Protect with a mutex if used in RTOS.
+ *
+ * @param format Format string (like printf).
+ * @param ... Variable arguments matching the format.
+ */
+
+#if PRINTF_ENABLE
+	void Printf(const char *format, ...)
+	{
+		char buffer[100];
+		va_list args;
+		va_start(args, format);
+		vsnprintf(buffer, sizeof(buffer), format, args);
+		HAL_UART_Transmit(&huart2, (uint8_t *)buffer, strlen(buffer), LOG_UART_TIMEOUT);
+		va_end(args);
+		return;
+	}
+#endif
+
+
+/**
+ * @brief Prints a floating-point value with label and unit, formatted to 4 decimal places.
+ *
+ * This function prints the floating-point number in the form:
+ *  <label> = <integer_part>.<fractional_part> <unit>
+ * It handles negative,positive values and limits the integer part to 6 digits.
+ * If the integer part exceeds 6 digits (positive or negative), an error message is logged.
+ *
+ * @param[in] label Pointer to a string representing the label/name of the value.
+ * @param[in] val   The floating-point value to log.
+ * @param[in] unit  Pointer to a string representing the unit of the value.
+ */
+
+static inline void PRINT_FLOAT(const char *label, float val, const char *unit)
+{
+    int32_t int_part = (int32_t)val;
+    int32_t frac_part = 0;
+
+    if ((int_part > 999999) || (int_part < -999999))
+    {
+        Printf("%s = [ERROR: integer part exceeds 6 digits]\n", label);
+        return;
+    }
+
+    float remainder = val - (float)int_part;
+    if (remainder < 0.0F)
+        remainder = -remainder;
+
+    frac_part = (int32_t)((remainder * 10000.0F) + 0.00001F);
+
+    if ((val < 0.0F) && (int_part == 0))
+        Printf("%s = -0.%04" PRId32 " %s\n", label, frac_part, unit);
+    else
+        Printf("%s = %" PRId32 ".%04" PRId32 " %s\n", label, int_part, frac_part, unit);
+}
