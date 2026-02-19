@@ -38,7 +38,7 @@
  * @param[in] unit  Pointer to a string representing the unit of the value.
  */
 
-static inline void PRINT_FLOAT(const char *label, float val, const char *unit)
+static void PRINT_FLOAT(const char *label, float val, const char *unit)
 {
     int32_t int_part = (int32_t)val;
     int32_t frac_part = 0;
